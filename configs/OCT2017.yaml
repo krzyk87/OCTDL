@@ -11,8 +11,10 @@ data:
   num_classes: 4
   input_size: 224
   in_channels: 3
-  mean: auto
-  std: auto
+  mean: [0.19339001178741455, 0.19339001178741455, 0.19339001178741455]
+  std: [0.21859419345855713, 0.21859419345855713, 0.21859419345855713]
+#  mean: auto
+#  std: auto
   sampling_strategy: class_balanced
   sampling_weights_decay_rate: 0.9
   data_augmentation:
