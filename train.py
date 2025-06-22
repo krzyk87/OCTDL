@@ -130,7 +130,20 @@ def evaluate(cfg, model, test_dataset, estimator):
     for metric, score in test_scores.items():
         print('{}: {}'.format(metric, score))
     print('Confusion Matrix:')
-    print(estimator.get_conf_mat())
+    conf_mat = estimator.get_conf_mat()
+    print(conf_mat)
+
+    # Plot and save confusion matrix
+    class_names = test_dataset.classes
+    model_path = os.path.dirname(cfg.train.checkpoint)
+    dataset = cfg.base.data_path.split('/')[-1]
+    plot_confusion_matrix(
+        cm=conf_mat,
+        classes=class_names,
+        normalize=False,
+        model_path=model_path,
+        exp_name='_'.join([cfg.train.network, dataset])
+    )
     print('========================================')
 
 
