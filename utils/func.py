@@ -217,7 +217,7 @@ def add_path_suffix(path):
 def plot_confusion_matrix(cm, classes,
                           normalize=False,
                           title='Confusion matrix',
-                          cmap=plt.cm.Blues,
+                          cmap=plt.cm.terrain_r,
                           exp_name='',
                           model_path=''):
     """
@@ -229,8 +229,8 @@ def plot_confusion_matrix(cm, classes,
     # plt.title(title)
     plt.colorbar()
     tick_marks = np.arange(len(classes))
-    plt.xticks(tick_marks, classes, rotation=0)
-    plt.yticks(tick_marks, classes)
+    plt.xticks(tick_marks, classes, rotation=0, fontsize=12)
+    plt.yticks(tick_marks, classes, fontsize=12)
     if normalize:
         cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
 
@@ -238,9 +238,10 @@ def plot_confusion_matrix(cm, classes,
     for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):
         plt.text(j, i, cm[i, j],
                  horizontalalignment="center",
-                 color="white" if cm[i, j] > thresh else "black")
-    plt.ylabel('Real class')
-    plt.xlabel('Predicted class')
+                 color="white" if cm[i, j] > thresh else "black",
+                 fontsize=14)
+    plt.ylabel('Real class', fontsize=12)
+    plt.xlabel('Predicted class', fontsize=12)
     plt.tight_layout()
     save_path = os.path.join(model_path, f'conf_mat_{exp_name}.png')
     plt.savefig(save_path, dpi=300)

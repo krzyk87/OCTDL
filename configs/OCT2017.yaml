@@ -1,7 +1,7 @@
 
 base:
-  data_path: ./OCT2017   #https://www.kaggle.com/datasets/paultimothymooney/kermany2018?resource=download
-  save_path: ./run
+  data_path: ../../DATA/OCT2017   #https://www.kaggle.com/datasets/paultimothymooney/kermany2018?resource=download
+  save_path: ./runs/run
   device: cuda
   random_seed: 0
   overwrite: false # overwrite save_path
@@ -28,7 +28,7 @@ data:
 train:
   network: inception_v3 #inception_v3 #resnet50 #vgg16 #mobilenetv3_large_100 mobilenetv3_small_100
   pretrained: true
-  checkpoint: null
+  checkpoint: runs/mobilenetv3_small/run_8/final_weights.pt
   epochs: &epochs 100
   batch_size: 64
   num_workers: 8

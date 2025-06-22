@@ -152,7 +152,7 @@ def eval(cfg, model, dataloader, criterion, estimator, device):
     torch.set_grad_enabled(False)
 
     estimator.reset()
-    for test_data in dataloader:
+    for test_data in tqdm(dataloader):
         X, y = test_data
         X = X.to(device)
         y = y.to(device)
