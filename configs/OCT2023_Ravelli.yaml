@@ -1,6 +1,6 @@
 base:
-  data_path: ./OCT2023_Ravelli
-  save_path: ./run
+  data_path: ../../DATA/OCT2023_Ravelli
+  save_path: ./runs/run
   device: cuda
   random_seed: 0
   overwrite: false # overwrite save_path
@@ -10,8 +10,10 @@ data:
   num_classes: 4
   input_size: 224
   in_channels: 3
-  mean: auto
-  std: auto
+  mean: [0.19272366166114807, 0.19272366166114807, 0.19272366166114807]
+  std: [0.21833819150924683, 0.21833819150924683, 0.21833819150924683]
+#  mean: auto
+#  std: auto
   sampling_strategy: class_balanced
   sampling_weights_decay_rate: 0.9
   data_augmentation:
@@ -23,12 +25,12 @@ data:
     - translation
     - gaussian_blur
 train:
-  network: vgg16 #mobilenetv3_large_100   #resnet50 / vgg16 / inception_v3
+  network: mobilenetv3_small_100 #mobilenetv3_large_100   #resnet50 / vgg16 / inception_v3
   pretrained: true
-  checkpoint: null
+  checkpoint: runs/mobilenetv3_small/run_25/final_weights.pt
   epochs: &epochs 100
   batch_size: 64
-  num_workers: 8
+  num_workers: 4
   criterion: cross_entropy
   loss_weight: null
   loss_weight_decay_rate: 0

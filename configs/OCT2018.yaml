@@ -1,6 +1,6 @@
 base:
-  data_path: ./OCT2018   #https://www.kaggle.com/datasets/anirudhcv/labeled-optical-coherence-tomography-oct
-  save_path: ./run
+  data_path: ../../DATA/OCT2018_Anirudh   #https://www.kaggle.com/datasets/anirudhcv/labeled-optical-coherence-tomography-oct
+  save_path: ./runs/run
   device: cuda
   random_seed: 0
   overwrite: false # overwrite save_path
@@ -10,8 +10,10 @@ data:
   num_classes: 4
   input_size: 224
   in_channels: 3
-  mean: auto
-  std: auto
+  mean: [0.19094327092170715, 0.19094327092170715, 0.19094327092170715]
+  std: [0.21729964017868042, 0.21729964017868042, 0.21729964017868042]
+#  mean: auto
+#  std: auto
   sampling_strategy: class_balanced
   sampling_weights_decay_rate: 0.9
   data_augmentation:
@@ -23,12 +25,12 @@ data:
     - translation
     - gaussian_blur
 train:
-  network: resnet50   #resnet50 / vgg16
+  network: inception_v3   #resnet50 / vgg16 / mobilenetv3_large_100 / mobilenetv3_small_100 / inception_v3
   pretrained: true
-  checkpoint: null
+  checkpoint: runs/inceptionv3/run_12/final_weights.pt
   epochs: &epochs 100
   batch_size: 64
-  num_workers: 8
+  num_workers: 4
   criterion: cross_entropy
   loss_weight: null
   loss_weight_decay_rate: 0
