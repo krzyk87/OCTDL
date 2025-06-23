@@ -140,7 +140,7 @@ def evaluate(cfg, model, test_dataset, estimator):
     plot_confusion_matrix(
         cm=conf_mat,
         classes=class_names,
-        normalize=False,
+        normalize=True,
         model_path=model_path,
         exp_name='_'.join([cfg.train.network, dataset])
     )

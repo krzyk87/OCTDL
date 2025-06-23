@@ -26,9 +26,9 @@ data:
     - translation
     - gaussian_blur
 train:
-  network: inception_v3 #inception_v3 #resnet50 #vgg16 #mobilenetv3_large_100 mobilenetv3_small_100
+  network: mobilenetv3_large_100 #inception_v3 #resnet50 #vgg16 #mobilenetv3_large_100 mobilenetv3_small_100
   pretrained: true
-  checkpoint: runs/mobilenetv3_small/run_8/final_weights.pt
+  checkpoint: runs/mobilenetv3_large/run_4/final_weights.pt
   epochs: &epochs 100
   batch_size: 64
   num_workers: 8

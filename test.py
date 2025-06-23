@@ -29,7 +29,7 @@ Examples:
 """
 
 
-@hydra.main(version_base=None, config_path="./configs", config_name="OCT2023_Ravelli")
+@hydra.main(version_base=None, config_path="./configs", config_name="OCT2018")
 def main(cfg: DictConfig) -> None:
     # Get model path from config
     model_path = cfg.train.checkpoint
