@@ -38,7 +38,7 @@ def find_log_files(model_name):
     
     for dataset in datasets:
         # Find all run directories for this model and dataset
-        pattern = os.path.join("runs", model_name, f"run_*_{dataset}", "log", "*")
+        pattern = os.path.join("runs", model_name, f"run_*_{dataset}", "log", "events.out.tfevents.*")
         files = glob.glob(pattern)
         
         if files:
@@ -110,7 +110,7 @@ def plot_metrics(model_name, datasets_metrics):
         ax_acc.set_title(f"{dataset} - Accuracy")
         ax_acc.set_xlabel("Epoch")
         ax_acc.set_ylabel("Accuracy")
-        ax_acc.set_ylim(min_acc, 1.1)  # Set consistent y-axis range for accuracy
+        ax_acc.set_ylim(min_acc, 1.05)  # Set consistent y-axis range for accuracy
         ax_acc.grid(True, alpha=0.3)  # Add grid to accuracy plot
 
         # Plot loss
