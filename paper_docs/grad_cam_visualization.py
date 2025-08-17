@@ -325,9 +325,6 @@ def generate_grad_cam(model_name, dataset_name, weight_file, sample_images, cfg)
     # Get target layer for Grad-CAM
     target_layer = get_target_layer(model, model_name)
     
-    # Initialize Grad-CAM
-    cam = GradCAM(model=model, target_layer=target_layer)
-    
     # Check if we have all four classes
     class_names = ["CNV", "DME", "DRUSEN", "NORMAL"]
     if not all(class_name in sample_images for class_name in class_names):
@@ -346,8 +343,11 @@ def generate_grad_cam(model_name, dataset_name, weight_file, sample_images, cfg)
         input_tensor, image_for_display = preprocess_image(image_path, cfg)
 
         # Move input tensor to the same device as model
-        input_tensor = input_tensor.to(cfg.base.device)  # Add this line
+        input_tensor = input_tensor.to(cfg.base.device)
 
+        # Initialize a new Grad-CAM instance for each image
+        cam = GradCAM(model=model, target_layer=target_layer)
+        
         # Generate Grad-CAM
         grayscale_cam = cam(input_tensor=input_tensor)
         
