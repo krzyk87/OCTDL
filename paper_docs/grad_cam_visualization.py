@@ -344,7 +344,10 @@ def generate_grad_cam(model_name, dataset_name, weight_file, sample_images, cfg)
         
         # Preprocess image
         input_tensor, image_for_display = preprocess_image(image_path, cfg)
-        
+
+        # Move input tensor to the same device as model
+        input_tensor = input_tensor.to(cfg.base.device)  # Add this line
+
         # Generate Grad-CAM
         grayscale_cam = cam(input_tensor=input_tensor)
         
