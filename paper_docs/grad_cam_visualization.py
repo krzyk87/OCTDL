@@ -22,13 +22,14 @@ Example:
     python grad_cam_visualization.py resnet50
 
 Output:
-    The script will generate Grad-CAM visualizations for each dataset and class,
-    and save them in the paper_docs/grad_cam directory with filenames in the format:
-    MODEL_NAME_DATASET_CLASS.png (e.g., resnet50_OCT2017_CNV.png)
+    The script will generate a combined Grad-CAM visualization for each dataset,
+    showing one image from each of the four classes (CNV, DME, DRUSEN, NORMAL) in a single row.
+    The visualizations are saved in the paper_docs/grad_cam directory with filenames in the format:
+    MODEL_NAME_DATASET_combined.png (e.g., resnet50_OCT2017_combined.png)
 
 Each output image contains:
-    - The original image on the left
-    - The Grad-CAM visualization overlaid on the image on the right
+    - Four Grad-CAM visualizations in one row, one for each class
+    - Each visualization shows the original image with a semi-transparent Grad-CAM overlay
 
 Note:
     If the script cannot find the test images, check that the data paths in the config files
@@ -247,15 +248,16 @@ class GradCAM:
         return cam.squeeze().cpu().numpy()
 
 
-def show_cam_on_image(img, mask, use_rgb=True, colormap=cv2.COLORMAP_JET):
+def show_cam_on_image(img, mask, use_rgb=True, colormap=cv2.COLORMAP_JET, alpha=0.6):
     """
-    Overlay the CAM mask on the image.
+    Overlay the CAM mask on the image with adjustable transparency.
     
     Args:
         img (numpy.ndarray): Input image
         mask (numpy.ndarray): CAM mask
         use_rgb (bool): Whether to use RGB or BGR
         colormap: OpenCV colormap
+        alpha (float): Transparency factor (0.0 to 1.0) - higher means more transparent overlay
         
     Returns:
         numpy.ndarray: Visualization
@@ -265,7 +267,8 @@ def show_cam_on_image(img, mask, use_rgb=True, colormap=cv2.COLORMAP_JET):
         heatmap = cv2.cvtColor(heatmap, cv2.COLOR_BGR2RGB)
     
     heatmap = np.float32(heatmap) / 255
-    cam = heatmap + np.float32(img)
+    # Blend with transparency: alpha * img + (1-alpha) * heatmap
+    cam = alpha * np.float32(img) + (1-alpha) * heatmap
     cam = cam / np.max(cam)
     return np.uint8(255 * cam)
 
@@ -325,40 +328,44 @@ def generate_grad_cam(model_name, dataset_name, weight_file, sample_images, cfg)
     # Initialize Grad-CAM
     cam = GradCAM(model=model, target_layer=target_layer)
     
+    # Check if we have all four classes
+    class_names = ["CNV", "DME", "DRUSEN", "NORMAL"]
+    if not all(class_name in sample_images for class_name in class_names):
+        missing = [c for c in class_names if c not in sample_images]
+        print(f"Missing images for classes: {missing}. Cannot create combined visualization.")
+        return
+    
+    # Create a single figure with 4 images in one row
+    fig, axes = plt.subplots(1, 4, figsize=(16, 4))
+    
     # Process each class
-    for class_name, image_path in sample_images.items():
+    for i, class_name in enumerate(class_names):
+        image_path = sample_images[class_name]
+        
         # Preprocess image
         input_tensor, image_for_display = preprocess_image(image_path, cfg)
         
         # Generate Grad-CAM
         grayscale_cam = cam(input_tensor=input_tensor)
         
-        # Overlay Grad-CAM on image
-        visualization = show_cam_on_image(image_for_display, grayscale_cam)
+        # Overlay Grad-CAM on image with more transparency
+        visualization = show_cam_on_image(image_for_display, grayscale_cam, alpha=0.8)
         
-        # Create figure with original and Grad-CAM images
-        fig, axes = plt.subplots(1, 2, figsize=(12, 6))
-        
-        # Original image
-        axes[0].imshow(image_for_display)
-        axes[0].set_title(f"Original - {class_name}")
-        axes[0].axis('off')
-        
-        # Grad-CAM visualization
-        axes[1].imshow(visualization)
-        axes[1].set_title(f"Grad-CAM - {class_name}")
-        axes[1].axis('off')
-        
-        # Set title
-        fig.suptitle(f"{model_name} - {dataset_name} - {class_name}", fontsize=16)
-        
-        # Save figure
-        save_path = os.path.join("paper_docs", "grad_cam", f"{model_name}_{dataset_name}_{class_name}.png")
-        plt.tight_layout()
-        plt.savefig(save_path)
-        plt.close()
-        
-        print(f"Saved Grad-CAM visualization for {model_name} - {dataset_name} - {class_name}")
+        # Add to the figure
+        axes[i].imshow(visualization)
+        axes[i].set_title(f"{class_name}")
+        axes[i].axis('off')
+    
+    # Set title for the entire figure
+    fig.suptitle(f"{model_name} - {dataset_name} - Grad-CAM Visualizations", fontsize=16)
+    
+    # Save figure
+    save_path = os.path.join("paper_docs", "grad_cam", f"{model_name}_{dataset_name}_combined.png")
+    plt.tight_layout()
+    plt.savefig(save_path)
+    plt.close()
+    
+    print(f"Saved combined Grad-CAM visualization for {model_name} - {dataset_name}")
 
 
 def main():

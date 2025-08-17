@@ -7,7 +7,14 @@ def generate_model(cfg):
     model = build_model(cfg)
 
     if cfg.train.checkpoint:
-        weights = torch.load(cfg.train.checkpoint)
+        # Map tensors to CPU to handle CUDA -> CPU loading
+        device = getattr(cfg.base, 'device', 'cpu')
+        if device == 'cpu':
+            weights = torch.load(cfg.train.checkpoint, map_location=torch.device('cpu'))
+        else:
+            weights = torch.load(cfg.train.checkpoint, map_location=torch.device(device))
+
+        # weights = torch.load(cfg.train.checkpoint)
         model.load_state_dict(weights, strict=True)
         print_msg('Load weights form {}'.format(cfg.train.checkpoint))
     model = model.to(cfg.base.device)
