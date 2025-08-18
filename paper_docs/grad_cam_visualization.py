@@ -106,41 +106,36 @@ def load_config(dataset_name):
 
 def get_sample_images(dataset_name):
     """
-    Get sample images from each class in the test set.
+    Get sample images from each class in the examples directory.
     
     Args:
-        dataset_name (str): Name of the dataset (e.g., OCT2017, OCT2018, Ravelli)
+        dataset_name (str): Name of the dataset (not used, kept for compatibility)
         
     Returns:
         dict: Dictionary mapping class names to image file paths
     """
-    # Load config to get data path
-    cfg = load_config(dataset_name)
-    data_path = cfg.base.data_path
+    # Use fixed example images from paper_docs/examples directory
+    examples_dir = os.path.join("paper_docs", "examples")
     
-    # Get test directory
-    test_dir = os.path.join(data_path, "test")
-    
-    # Check if the test directory exists
-    if not os.path.exists(test_dir):
-        print(f"Test directory not found: {test_dir}")
-        print(f"Please ensure the data path in the config file ({dataset_name}.yaml) is correct.")
-        print(f"Current data path: {data_path}")
-        print(f"Expected structure: {data_path}/test/[CNV,DME,DRUSEN,NORMAL]/images")
+    # Check if the examples directory exists
+    if not os.path.exists(examples_dir):
+        print(f"Examples directory not found: {examples_dir}")
+        print(f"Please ensure the paper_docs/examples directory exists with class images.")
         return {}
     
-    # Get one image from each class
-    class_dirs = ["CNV", "DME", "DRUSEN", "NORMAL"]
-    sample_images = {}
+    # Map class names to specific example images
+    sample_images = {
+        "CNV": os.path.join(examples_dir, "CNV-81630-43.jpeg"),
+        "DME": os.path.join(examples_dir, "DME-82328-7.jpeg"),
+        "DRUSEN": os.path.join(examples_dir, "DRUSEN-95633-4.jpeg"),
+        "NORMAL": os.path.join(examples_dir, "NORMAL-1384-3.jpeg")
+    }
     
-    for class_dir in class_dirs:
-        class_path = os.path.join(test_dir, class_dir)
-        if os.path.exists(class_path):
-            image_files = glob.glob(os.path.join(class_path, "*.jpeg")) + glob.glob(os.path.join(class_path, "*.jpg")) + glob.glob(os.path.join(class_path, "*.png"))
-            if image_files:
-                sample_images[class_dir] = image_files[0]
-        else:
-            print(f"Class directory not found: {class_path}")
+    # Verify all files exist
+    for class_name, image_path in sample_images.items():
+        if not os.path.exists(image_path):
+            print(f"Example image not found: {image_path}")
+            sample_images.pop(class_name)
     
     return sample_images
 
@@ -360,7 +355,7 @@ def generate_grad_cam(model_name, dataset_name, weight_file, sample_images, cfg)
         axes[i].axis('off')
     
     # Set title for the entire figure
-    fig.suptitle(f"{model_name} - {dataset_name} - Grad-CAM Visualizations", fontsize=16)
+    # fig.suptitle(f"{model_name} - {dataset_name} - Grad-CAM Visualizations", fontsize=16)
     
     # Save figure
     save_path = os.path.join("paper_docs", "grad_cam", f"{model_name}_{dataset_name}_combined.png")
