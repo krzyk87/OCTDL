@@ -10,7 +10,7 @@ import hydra
 from omegaconf import DictConfig
 
 
-@hydra.main(version_base=None, config_path="./configs", config_name="OCTDL")
+@hydra.main(version_base=None, config_path="./configs", config_name="CAVRI-H5")
 def main(cfg: DictConfig) -> None:
 
     save_path = cfg.base.save_path
