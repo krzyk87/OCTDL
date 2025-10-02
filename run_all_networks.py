@@ -10,7 +10,7 @@ NETWORKS = [
     "mobilenetv3_large_100",
     "mobilenetv3_small_100",
     "vit_base_patch16_224",
-    "efficientnetv2_s",
+    "tf_efficientnetv2_s",
     "resnet18",
 ]
 

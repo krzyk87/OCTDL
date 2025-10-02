@@ -1,6 +1,6 @@
 base:
-  data_path: ../../DATA/CAVRI_H5_cleaned
-  save_path: ./runs/CAVRI_H5_cleaned/run_batch64_A
+  data_path: ../../DATA/CAVRI-H5_cleaned
+  save_path: ./runs/CAVRI-H5_cleaned/run_batch64_A_${train.network}
   device: cuda
   random_seed: 0
   overwrite: false # overwrite save_path
