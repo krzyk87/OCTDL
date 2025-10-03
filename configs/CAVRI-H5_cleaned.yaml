@@ -1,6 +1,6 @@
 base:
   data_path: ../../DATA/CAVRI-H5_cleaned
-  save_path: ./runs/CAVRI-H5_cleaned/run_batch64_A_${train.network}
+  save_path: ./runs/CAVRI-H5_cleaned/run_A_${train.network}
   device: cuda
   random_seed: 0
   overwrite: false # overwrite save_path
@@ -10,10 +10,10 @@ data:
   num_classes: 5
   input_size: 224
   in_channels: 3
-#mean: [0.18328174948692322, 0.1832699328660965, 0.18329529464244843]
-#std: [0.20572423934936523, 0.2057236135005951, 0.2057289332151413]
-  mean: auto
-  std: auto
+  mean: [0.18328174948692322, 0.1832699328660965, 0.18329529464244843]
+  std: [0.20572423934936523, 0.2057236135005951, 0.2057289332151413]
+#  mean: auto
+#  std: auto
   sampling_strategy: class_balanced
   sampling_weights_decay_rate: 0.9
   data_augmentation:

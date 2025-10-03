@@ -66,12 +66,12 @@ def find_model_weights(model_name):
     Returns:
         dict: Dictionary mapping dataset names to model weight file paths
     """
-    datasets = ["OCT2017", "OCT2018", "Ravelli"]
+    datasets = ["CAVRI-H5_cleaned"] # ["OCT2017", "OCT2018", "Ravelli"]
     weight_files = {}
     
     for dataset in datasets:
         # Find all run directories for this model and dataset
-        pattern = os.path.join("runs", model_name, f"run_*_{dataset}", "final_weights.pt")
+        pattern = os.path.join("runs", dataset, f"run_*_{model_name}", "final_weights.pt")
         files = glob.glob(pattern)
         
         if files:
@@ -106,37 +106,44 @@ def load_config(dataset_name):
 
 def get_sample_images(dataset_name):
     """
-    Get sample images from each class in the examples directory.
-    
+    Get sample images from each class in the examples directory by matching
+    class-name substrings in filenames (in capital letters), instead of
+    relying on exact filenames.
+
     Args:
-        dataset_name (str): Name of the dataset (not used, kept for compatibility)
-        
+        dataset_name (str): Name of the dataset (used to select examples subfolder)
+
     Returns:
-        dict: Dictionary mapping class names to image file paths
+        dict: Dictionary mapping class names to image file paths (one file per class if found)
     """
-    # Use fixed example images from paper_docs/examples directory
-    examples_dir = os.path.join("paper_docs", "examples")
-    
+    examples_dir = os.path.join("paper_docs", "examples", dataset_name)
+
     # Check if the examples directory exists
     if not os.path.exists(examples_dir):
         print(f"Examples directory not found: {examples_dir}")
-        print(f"Please ensure the paper_docs/examples directory exists with class images.")
+        print("Please ensure paper_docs/examples/<DATASET>/ contains example images per class.")
         return {}
-    
-    # Map class names to specific example images
-    sample_images = {
-        "CNV": os.path.join(examples_dir, "CNV-81630-43.jpeg"),
-        "DME": os.path.join(examples_dir, "DME-82328-7.jpeg"),
-        "DRUSEN": os.path.join(examples_dir, "DRUSEN-95633-4.jpeg"),
-        "NORMAL": os.path.join(examples_dir, "NORMAL-1384-3.jpeg")
-    }
-    
-    # Verify all files exist
-    for class_name, image_path in sample_images.items():
-        if not os.path.exists(image_path):
-            print(f"Example image not found: {image_path}")
-            sample_images.pop(class_name)
-    
+
+    # Classes to look for (uppercase substrings expected in filenames)
+    class_names = ["CNV", "DME", "DRUSEN", "NORMAL", "VMT"]
+
+    # Collect all candidate image files
+    exts = (".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff")
+    try:
+        all_files = [os.path.join(examples_dir, f) for f in os.listdir(examples_dir) if f.lower().endswith(exts)]
+    except Exception:
+        all_files = []
+
+    # Build mapping by substring matching (case-sensitive for the class token)
+    sample_images = {}
+    for cname in class_names:
+        match = next((p for p in all_files if cname in os.path.basename(p)), None)
+        if match is not None:
+            sample_images[cname] = match
+        else:
+            # Informative message; continue without failing hard
+            print(f"No example image found for class '{cname}' in {examples_dir} (looked for filename containing '{cname}').")
+
     return sample_images
 
 
@@ -153,12 +160,45 @@ def preprocess_image(image_path, cfg):
     """
     # Load image
     image = Image.open(image_path).convert('RGB')
+
+    # ANSI color codes
+    YELLOW = '\033[93m'
+    RESET = '\033[0m'
+
+    # Ensure mean and std are numeric lists, not strings
+    mean = cfg.data.mean
+    std = cfg.data.std
+
+    # Handle case where mean/std might be strings or other non-numeric types
+    if isinstance(mean, str) or not hasattr(mean, '__iter__'):
+        # Fallback to ImageNet defaults for RGB images
+        mean = [0.485, 0.456, 0.406]
+        print(f"{YELLOW}Warning: Using default ImageNet mean values due to invalid config: {cfg.data.mean}{RESET}")
+    else:
+        # Ensure it's a list of floats
+        try:
+            mean = [float(x) for x in mean]
+        except (ValueError, TypeError):
+            mean = [0.485, 0.456, 0.406]
+            print(f"{YELLOW}Warning: Using default ImageNet mean values due to conversion error: {cfg.data.mean}{RESET}")
+
+    if isinstance(std, str) or not hasattr(std, '__iter__'):
+        # Fallback to ImageNet defaults for RGB images
+        std = [0.229, 0.224, 0.225]
+        print(f"{YELLOW}Warning: Using default ImageNet std values due to invalid config: {cfg.data.std}{RESET}")
+    else:
+        # Ensure it's a list of floats
+        try:
+            std = [float(x) for x in std]
+        except (ValueError, TypeError):
+            std = [0.229, 0.224, 0.225]
+            print(f"{YELLOW}Warning: Using default ImageNet std values due to conversion error: {cfg.data.std}{RESET}")
     
     # Create preprocessing transform
     preprocess = transforms.Compose([
         transforms.Resize((cfg.data.input_size, cfg.data.input_size)),
         transforms.ToTensor(),
-        transforms.Normalize(mean=cfg.data.mean, std=cfg.data.std)
+        transforms.Normalize(mean=mean, std=std)
     ])
     
     # Preprocess image for model input
@@ -320,15 +360,22 @@ def generate_grad_cam(model_name, dataset_name, weight_file, sample_images, cfg)
     # Get target layer for Grad-CAM
     target_layer = get_target_layer(model, model_name)
     
-    # Check if we have all four classes
-    class_names = ["CNV", "DME", "DRUSEN", "NORMAL"]
-    if not all(class_name in sample_images for class_name in class_names):
-        missing = [c for c in class_names if c not in sample_images]
-        print(f"Missing images for classes: {missing}. Cannot create combined visualization.")
+    # Determine which classes we have based on provided sample_images
+    preferred_order = ["CNV", "DME", "DRUSEN", "NORMAL", "VMT"]
+    class_names = [c for c in preferred_order if c in sample_images]
+    # Include any additional keys not in preferred_order (preserve dict order)
+    class_names += [c for c in sample_images.keys() if c not in preferred_order]
+
+    if len(class_names) == 0:
+        print("No valid sample images provided. Cannot create combined visualization.")
         return
-    
-    # Create a single figure with 4 images in one row
-    fig, axes = plt.subplots(1, 4, figsize=(16, 4))
+
+    # Create a single figure with as many images as we have samples
+    n_cols = len(class_names)
+    fig_width = max(4 * n_cols, 4)
+    fig, axes = plt.subplots(1, n_cols, figsize=(fig_width, 4))
+    if n_cols == 1:
+        axes = [axes]
     
     # Process each class
     for i, class_name in enumerate(class_names):
@@ -368,7 +415,7 @@ def generate_grad_cam(model_name, dataset_name, weight_file, sample_images, cfg)
 
 def main():
     parser = argparse.ArgumentParser(description="Generate Grad-CAM visualizations for a model")
-    parser.add_argument("model_name", type=str, help="Name of the model (e.g., resnet50, vgg16, inception_v3, mobilenetv3_small, mobilenetv3_large)")
+    parser.add_argument("--model_name", type=str, default="vgg16", help="Name of the model (e.g., resnet50, vgg16, inception_v3, mobilenetv3_small, mobilenetv3_large)")
     args = parser.parse_args()
     
     model_name = args.model_name
