@@ -1,6 +1,6 @@
 base:
-  data_path: ./dataset
-  save_path: ./run
+  data_path: ../../DATA/OCTDL/
+  save_path: ./runs/OCTDL/run_${train.network}
   device: cuda
   random_seed: 0
   overwrite: false # overwrite save_path
@@ -41,7 +41,7 @@ train:
   pin_memory: true
 solver:
   optimizer: ADAM # SGD / ADAM / ADAMW
-  learning_rate: 0.0003
+  learning_rate: 0.0005   # 0.0003 in the repo, 0.0005 in the paper
   lr_scheduler: cosine
   momentum: 0.9 # only for SGD
   nesterov: true # only for SGD

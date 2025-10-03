@@ -23,7 +23,7 @@ NETWORKS = [
     "resnet18",
 ]
 
-DEFAULT_CONFIG_NAME = "CAVRI-H5.yaml"
+DEFAULT_CONFIG_NAME = "CAVRI-H5_cleaned.yaml"
 
 
 def parse_args():
@@ -37,7 +37,7 @@ def parse_args():
     p.add_argument(
         "--config-name",
         default=DEFAULT_CONFIG_NAME,
-        help="Config YAML file name in ./configs to use (default: CAVRI-H5.yaml)",
+        help="Config YAML file name in ./configs to use (default: CAVRI-H5_cleaned.yaml)",
     )
     p.add_argument(
         "--networks",
