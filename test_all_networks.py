@@ -49,28 +49,25 @@ def parse_args():
 
 
 def load_save_path_template(config_path: str) -> Optional[str]:
-    """Load base.save_path template from YAML config. Prefer OmegaConf to keep any changes centralized."""
-    if OmegaConf is None:
-        # Fallback: naive parsing to find the line starting with 'save_path:', not robust for all YAMLs
-        try:
-            with open(config_path, "r") as f:
-                for line in f:
-                    s = line.strip()
-                    if s.startswith("save_path:"):
-                        # after colon
-                        val = s.split(":", 1)[1].strip()
-                        # strip quotes if any
-                        if (val.startswith("\"") and val.endswith("\"")) or (val.startswith("'") and val.endswith("'")):
-                            val = val[1:-1]
-                        return val
-        except Exception:
-            return None
+    """Return the raw template string for base.save_path from the YAML file.
+    We intentionally avoid resolving OmegaConf interpolations here to preserve
+    placeholders like ${train.network} so they can be substituted per network.
+    """
+    # Parse the YAML file textually to avoid resolving ${...} interpolations.
+    try:
+        with open(config_path, "r") as f:
+            for line in f:
+                s = line.strip()
+                if s.startswith("save_path:"):
+                    # after colon
+                    val = s.split(":", 1)[1].strip()
+                    # strip quotes if any
+                    if (val.startswith('"') and val.endswith('"')) or (val.startswith("'") and val.endswith("'")):
+                        val = val[1:-1]
+                    return val
+    except Exception:
         return None
-    # Proper way using OmegaConf
-    cfg = OmegaConf.load(config_path)
-    # Convert to a plain container while resolving interpolations as much as possible
-    # Keep the ${train.network} unresolved by temporarily setting a placeholder
-    return cfg.base.save_path
+    return None
 
 
 def resolve_save_path(template: str, network: str) -> str:
