@@ -83,7 +83,89 @@ Optional arguments:
 -p                Print configs before training
 ```
 
+## Recent Enhancements (made by krzyk87)
+This repository has been extended with the following features (contributed by krzyk87):
 
+### 1. Batch Training and Testing Scripts
+Automated training and testing pipeline for multiple CNN architectures with configurable networks and config files, with intelligent checkpoint discovery and network-specific evaluation. 
+
+Train multiple networks:
+```shell
+python train_all_networks.py
+```
+
+This script automates training for multiple networks (VGG16, ResNet18, ResNet50, InceptionV3, MobileNetV3, EfficientNetV2, DenseNet121).
+
+Optional arguments:
+```
+--config          Config file name (default: OCTDL.yaml)
+--networks        Space-separated list of networks to train (default: all networks)
+```
+
+Examples:
+```
+# Train all networks with default config
+python train_all_networks.py
+
+# Train specific networks
+python train_all_networks.py --networks resnet50 inception_v3
+
+# Use custom config file
+python train_all_networks.py --config CAVRI-H5_cleaned.yaml
+```
+
+Test multiple networks:
+```shell
+python test_all_networks.py
+```
+
+This script automates testing for multiple trained networks, automatically finding and loading the appropriate checkpoints.
+
+Optional arguments:
+```
+--config          Config file name (default: OCTDL.yaml)
+--networks        Space-separated list of networks to test (default: all networks)
+```
+
+Examples:
+``` shell
+# Test all networks with default config
+python test_all_networks.py
+
+# Test specific networks
+python test_all_networks.py --networks resnet50 vgg16
+```
+
+### 2. Enhanced Visualization and Analysis
+
+- **Grad-CAM Integration**: Added comprehensive Grad-CAM (Gradient-weighted Class Activation Mapping) visualization to interpret model decisions
+  - Integrated into test.py for automatic generation during testing
+  - Standalone script (paper_docs/grad_cam_visualization.py) for detailed analysis across datasets
+  - Device-aware tensor handling for CPU/GPU compatibility
+  - Support for multiple architectures (ResNet, VGG, InceptionV3, MobileNetV3)
+- **Training Curves Visualization**: Automatic extraction and plotting of training/validation metrics from TensorBoard logs
+  - Generates plots for accuracy, loss, F1-score, precision, recall, and AUC
+  - Saved alongside test results for comprehensive model evaluation
+
+### 3. Improved Training Process
+- **Validation Loss Tracking**: Enhanced train.py with validation loss computation and logging
+- **Flexible Loss Function Handling**: Support for both string-based and callable loss criteria
+- **Enhanced Logging**: Improved logging with config and network details for better traceability
+
+### 4. Multi-Dataset Support
+- Added configuration files for multiple OCT datasets:
+  - OCT2017, OCT2018, OCT2023_Ravelli
+  - CAVRI-H5_cleaned dataset
+- Network-specific save paths for organized experiment management
+- Standardized dataset directory structure across configurations
+
+### 5. Code Quality Improvements
+- Added .gitignore for better repository management
+- Enhanced error handling for missing config files and checkpoints
+- Improved documentation with example images and usage guides
+- Better device handling and tensor management for cross-platform compatibility
+
+These enhancements enable comprehensive experiments across multiple datasets (OCT2017, OCT2018, OCT2023_Ravelli) and architectures (VGG16, ResNet50, InceptionV3, MobileNetV3 Small/Large, EfficientNetV2, DenseNet121, ResNet18), supporting reproducible research in OCT image classification.
 
 ## Resources
 
