@@ -11,7 +11,7 @@ try:
 except Exception:
     OmegaConf = None  # We'll fallback to simple string substitution if not available
 
-# Keep this in sync with run_all_networks.py
+# Keep this in sync with train_all_networks.py
 NETWORKS = [
     "vgg16",
     "inception_v3",
