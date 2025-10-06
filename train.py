@@ -79,13 +79,15 @@ def train(cfg, model, train_dataset, val_dataset, estimator, logger=None):
 
         # validation performance
         if epoch % cfg.train.eval_interval == 0:
-            eval(cfg, model, val_loader, cfg.train.criterion, estimator, device)
+            val_loss = eval(cfg, model, val_loader, loss_function, estimator, device)
             val_scores = estimator.get_scores(6)
             scores_txt = ['{}: {}'.format(metric, score) for metric, score in val_scores.items()]
             print_msg('Validation metrics:', scores_txt)
             if logger:
                 for metric, score in val_scores.items():
                     logger.add_scalar('validation {}'.format(metric), score, epoch)
+                if val_loss is not None:
+                    logger.add_scalar('validation loss', val_loss, epoch)
 
             # save model
             indicator = val_scores[cfg.train.indicator]
@@ -152,16 +154,33 @@ def eval(cfg, model, dataloader, criterion, estimator, device):
     torch.set_grad_enabled(False)
 
     estimator.reset()
+
+    # Allow passing either a criterion string or a callable loss (e.g., WarpedLoss)
+    compute_loss = callable(criterion)
+    target_selector = criterion.criterion if compute_loss and hasattr(criterion, 'criterion') else criterion
+
+    total_loss = 0.0
+    steps = 0
+
     for test_data in tqdm(dataloader):
         X, y = test_data
         X = X.to(device)
         y = y.to(device)
-        y = select_target_type(y, criterion)
+        y = select_target_type(y, target_selector)
         y_pred = model(X)
         estimator.update(y_pred, y)
 
+        if compute_loss:
+            loss = criterion(y_pred, y)
+            total_loss += loss.item()
+            steps += 1
+
     model.train()
     torch.set_grad_enabled(True)
+
+    if compute_loss and steps > 0:
+        return total_loss / steps
+    return None
 
 
 # define weighted_sampler

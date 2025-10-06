@@ -1,5 +1,5 @@
 base:
-  data_path: ../../DATA/OCTDL/
+  data_path: ../../DATA/OCTDL
   save_path: ./runs/OCTDL/run_${train.network}
   device: cuda
   random_seed: 0
@@ -26,7 +26,7 @@ train:
   network: vgg16
   pretrained: true
   checkpoint: null
-  epochs: &epochs 100
+  epochs: &epochs 50  # was 100
   batch_size: 64
   num_workers: 8
   criterion: cross_entropy
@@ -41,11 +41,11 @@ train:
   pin_memory: true
 solver:
   optimizer: ADAM # SGD / ADAM / ADAMW
-  learning_rate: 0.0005   # 0.0003 in the repo, 0.0005 in the paper
+  learning_rate: 0.0001   # 0.0003 in the repo, 0.0005 in the paper
   lr_scheduler: cosine
   momentum: 0.9 # only for SGD
   nesterov: true # only for SGD
-  weight_decay: 0.0005
+  weight_decay: 0.0003
   adamw_betas: [0.9, 0.999] # only for ADAMW
 criterion_args:
   cross_entropy: {}
@@ -60,7 +60,7 @@ scheduler_args:
     eta_min: 0
   reduce_on_plateau:
     mode: min
-    factor: 0.1
+    factor: 0.5   # was 0.1
     patience: 5
     threshold: 0.0001
     eps: 0.00001
