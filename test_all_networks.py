@@ -161,16 +161,20 @@ def main():
         print("[test_all_networks] Could not read base.save_path from config. Aborting.", file=sys.stderr)
         sys.exit(1)
 
+    # Prepare Hydra-compatible config name (without .yaml extension)
+    cfg_name_for_hydra = os.path.splitext(os.path.basename(args.config_name))[0]
+
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     weights_filename = "best_validation_weights.pt" if args.weights == "best" else "final_weights.pt"
 
     for net in args.networks:
         out_path = os.path.join(runs_dir, f"test_output_{net}_{args.weights}.txt")
-        print(f"[test_all_networks] Starting test for network={net} using {weights_filename}. Output -> {out_path}")
+        print(f"[test_all_networks] Starting test for network={net} using {weights_filename} with config={cfg_name_for_hydra}. Output -> {out_path}")
 
         ckpt_path = find_checkpoint(project_root, net, args.weights, save_path_template)
         with open(out_path, "w", buffering=1) as f:
             f.write(f"Run timestamp: {timestamp}\n")
+            f.write(f"Config: {args.config_name}\n")
             f.write(f"Network: {net}\n")
             f.write(f"Weights: {weights_filename}\n\n")
             if not ckpt_path:
@@ -185,6 +189,7 @@ def main():
             cmd = [
                 "python",
                 os.path.join(project_root, "test.py"),
+                "--config-name", cfg_name_for_hydra,
                 f"train.network={net}",
                 f"train.checkpoint={ckpt_path}",
             ]
