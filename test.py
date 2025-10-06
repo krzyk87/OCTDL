@@ -16,6 +16,8 @@ from PIL import Image
 import cv2
 from torchvision import transforms
 from torch.nn import functional as F
+import glob
+from tensorboard.backend.event_processing import event_accumulator
 
 """
 Test script for evaluating a saved model on the test dataset.
@@ -82,6 +84,12 @@ def main(cfg: DictConfig) -> None:
         generate_and_save_grad_cam(cfg, model)
     except Exception as e:
         print_msg(f"Grad-CAM generation skipped due to error: {e}", warning=True)
+
+    # Generate training curves plot from TensorBoard logs and save next to the checkpoint
+    try:
+        generate_and_save_training_curves(cfg)
+    except Exception as e:
+        print_msg(f"Training curves plotting skipped due to error: {e}", warning=True)
 
 
 def set_random_seed(seed, deterministic=False):
@@ -292,6 +300,120 @@ def generate_and_save_grad_cam(cfg, model):
     plt.savefig(out_path)
     plt.close()
     print_msg(f"Saved Grad-CAM visualization to: {out_path}")
+
+
+# ===== Training curves utilities (adapted from paper_docs/plot_training_curves.py) =====
+
+def _find_latest_event_file(log_dir: str):
+    if not os.path.isdir(log_dir):
+        return None
+    pattern = os.path.join(log_dir, "events.out.tfevents.*")
+    files = glob.glob(pattern)
+    if not files:
+        return None
+    files.sort(key=lambda p: os.path.getmtime(p), reverse=True)
+    return files[0]
+
+
+def _load_tensorboard_data(log_file: str):
+    ea = event_accumulator.EventAccumulator(log_file)
+    ea.Reload()
+    tags = ea.Tags().get('scalars', [])
+    metrics = {}
+    for tag in tags:
+        events = ea.Scalars(tag)
+        steps = [event.step for event in events]
+        values = [event.value for event in events]
+        metrics[tag] = (steps, values)
+    return metrics
+
+
+def _plot_and_save_metrics_single(model_name: str, dataset_label: str, metrics: dict, out_path: str):
+    if not metrics:
+        print_msg("No scalar metrics found in TensorBoard log. Skipping training curves.", warning=True)
+        return
+    fig, axes = plt.subplots(2, 1, figsize=(6, 8), squeeze=False)
+    fig.suptitle(f"Training and Validation Metrics for {model_name} ({dataset_label})", fontsize=14)
+
+    # Determine axis ranges
+    min_acc, max_loss = 1.0, 0.0
+    for metric_name, (steps, values) in metrics.items():
+        if not values:
+            continue
+        if "acc" in metric_name.lower():
+            try:
+                min_acc = min(min_acc, float(min(values)))
+            except Exception:
+                pass
+        elif "loss" in metric_name.lower():
+            try:
+                max_loss = max(max_loss, float(max(values)))
+            except Exception:
+                pass
+    min_acc = max(0.0, (min_acc if min_acc < 1.0 else 0.8) - 0.05)
+    max_loss = max_loss * 1.05 if max_loss > 0 else 1.0
+
+    ax_acc = axes[0, 0]
+    ax_loss = axes[1, 0]
+
+    ax_acc.set_title("Accuracy")
+    ax_acc.set_xlabel("Epoch")
+    ax_acc.set_ylabel("Accuracy")
+    ax_acc.set_ylim(min_acc, 1.05)
+    ax_acc.grid(True, alpha=0.3)
+
+    ax_loss.set_title("Loss")
+    ax_loss.set_xlabel("Epoch")
+    ax_loss.set_ylabel("Loss")
+    ax_loss.set_ylim(0, max_loss)
+    ax_loss.grid(True, alpha=0.3)
+
+    for metric_name, (steps, values) in metrics.items():
+        lower = metric_name.lower()
+        if "acc" in lower and "val" not in lower:
+            ax_acc.plot(steps, values, label="Training Acc")
+        elif "acc" in lower and "val" in lower:
+            ax_acc.plot(steps, values, label="Validation Acc")
+        elif "loss" in lower and "val" not in lower:
+            ax_loss.plot(steps, values, label="Training Loss")
+        elif "loss" in lower and "val" in lower:
+            ax_loss.plot(steps, values, label="Validation Loss")
+
+    ax_acc.legend()
+    ax_loss.legend()
+
+    plt.tight_layout(rect=[0, 0, 1, 0.95])
+    plt.savefig(out_path)
+    plt.close()
+    print_msg(f"Saved training curves to: {out_path}")
+
+
+def generate_and_save_training_curves(cfg):
+    """Locate TensorBoard log for the evaluated checkpoint's run and save a
+    training/validation curves figure next to the checkpoint.
+    """
+    ckpt_path = str(cfg.train.checkpoint) if cfg.train.checkpoint is not None else None
+    if not ckpt_path:
+        print_msg("No checkpoint path in cfg.train.checkpoint; cannot infer run directory for training curves.", warning=True)
+        return
+    run_dir = os.path.dirname(ckpt_path)
+    log_dir = os.path.join(run_dir, "log")
+    event_file = _find_latest_event_file(log_dir)
+    if not event_file:
+        print_msg(f"No TensorBoard event file found under: {log_dir}", warning=True)
+        return
+
+    try:
+        metrics = _load_tensorboard_data(event_file)
+    except Exception as e:
+        print_msg(f"Failed to read TensorBoard data from {event_file}: {e}", warning=True)
+        return
+
+    model_name = str(cfg.train.network)
+    dataset_label = _get_dataset_name_from_cfg(cfg)
+    out_name = f"training_curves_{model_name}_{dataset_label}.png"
+    out_path = os.path.join(run_dir, out_name)
+    _plot_and_save_metrics_single(model_name, dataset_label, metrics, out_path)
 
 
 if __name__ == '__main__':
