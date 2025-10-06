@@ -17,7 +17,7 @@ NETWORKS = [
     "resnet18",
 ]
 
-DEFAULT_CONFIG_NAME = "OCTDL.yaml"
+DEFAULT_CONFIG_NAME = "CAVRI-H5_cleaned.yaml"
 
 
 def parse_args():
