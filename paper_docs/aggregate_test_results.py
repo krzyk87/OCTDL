@@ -76,7 +76,7 @@ def build_rows(dataset: str, networks: List[str], runs_dir: str, weights_suffix:
     """Build rows for CSV/LaTeX tables by scanning each network's test_output file."""
     rows = []
     for net in networks:
-        run_dir = os.path.join(runs_dir, dataset, f"run_A_{net}")
+        run_dir = os.path.join(runs_dir, dataset, f"run_{net}")
         test_out = os.path.join(run_dir, f"test_output_{net}_{weights_suffix}.txt")
         categories, metrics = parse_test_output(test_out)
         if not any(v is not None for v in metrics.values()):

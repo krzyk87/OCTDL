@@ -1,19 +1,17 @@
 base:
-  data_path: ../../DATA/OCT2023_Ravelli
-  save_path: ./runs/OCT2023_Ravelli/run_${train.network}
+  data_path: ../../DATA/OCTID
+  save_path: ./runs/OCTID/run_${train.network}
   device: cuda
   random_seed: 0
   overwrite: false # overwrite save_path
   progress: true
   cudnn_deterministic: False
 data:
-  num_classes: 4
+  num_classes: 5
   input_size: 224
   in_channels: 3
-  mean: [0.19272366166114807, 0.19272366166114807, 0.19272366166114807]
-  std: [0.21833819150924683, 0.21833819150924683, 0.21833819150924683]
-#  mean: auto
-#  std: auto
+  mean: auto
+  std: auto
   sampling_strategy: class_balanced
   sampling_weights_decay_rate: 0.9
   data_augmentation:
@@ -25,7 +23,7 @@ data:
     - translation
     - gaussian_blur
 train:
-  network: vgg16 #mobilenetv3_large_100   #resnet50 / vgg16 / inception_v3
+  network: vgg16
   pretrained: true
   checkpoint: null
   epochs: &epochs 50  # was 100
@@ -44,10 +42,10 @@ train:
 solver:
   optimizer: ADAM # SGD / ADAM / ADAMW
   learning_rate: 0.0001   # 0.0003 in the repo, 0.0005 in the paper
-  lr_scheduler: cosine     #  jak to wpływa - pytanie do Agnieszki ???????????????????????
+  lr_scheduler: cosine
   momentum: 0.9 # only for SGD
   nesterov: true # only for SGD
-  weight_decay: 0.0003    # 0.0005
+  weight_decay: 0.0003
   adamw_betas: [0.9, 0.999] # only for ADAMW
 criterion_args:
   cross_entropy: {}
