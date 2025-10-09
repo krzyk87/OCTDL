@@ -120,6 +120,10 @@ def save_latex(rows: List[Dict[str, Optional[str]]], out_path: str) -> None:
         vals = [r.get(h, "") or "" for h in headers]
         # Replace underscores in model names for LaTeX safety
         vals = [v.replace("_", "\\_") for v in vals]
+        vals[3] = f"{float(vals[3]):.4f}" if vals[3] and vals[3].replace(".", "").replace("-", "").isdigit() else vals[3]
+        vals[4] = f"{float(vals[4]):.4f}" if vals[4] and vals[4].replace(".", "").replace("-", "").isdigit() else vals[4]
+        vals[5] = f"{float(vals[5]):.4f}" if vals[5] and vals[5].replace(".", "").replace("-", "").isdigit() else vals[5]
+        vals[6] = f"{float(vals[6]):.4f}" if vals[6] and vals[6].replace(".", "").replace("-", "").isdigit() else vals[6]
         lines.append(" " + " & ".join(vals) + " \\ ")
     lines.append("\\hline")
     lines.append("\\end{tabular}")
