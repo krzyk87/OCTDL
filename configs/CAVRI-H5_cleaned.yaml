@@ -16,6 +16,7 @@ data:
 #  std: auto
   sampling_strategy: class_balanced
   sampling_weights_decay_rate: 0.9
+  plot_class_order: ['NORMAL', 'CNV', 'DME', 'DRUSEN', 'VMA-VMT']
   data_augmentation:
     - random_crop
     - horizontal_flip
@@ -27,7 +28,7 @@ data:
 train:
   network: vgg16 #inception_v3 #resnet50 #vgg16 #mobilenetv3_large_100 mobilenetv3_small_100
   pretrained: true
-  checkpoint: null
+  checkpoint: ./runs/CAVRI-H5_cleaned/run_A_${train.network}/best_validation_weights.pt
   epochs: &epochs 50  # [100]
   batch_size: 64   # 4 / 16 / [64]
   num_workers: 8

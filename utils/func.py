@@ -219,23 +219,51 @@ def plot_confusion_matrix(cm, classes,
                           title='Confusion matrix',
                           cmap=plt.cm.terrain_r,    # blues
                           exp_name='',
-                          model_path=''):
+                          model_path='',
+                          class_order=None):
     """
     This function prints and plots the confusion matrix.
     Normalization can be applied by setting `normalize=True`.
+
+    Parameters:
+    - cm: numpy.ndarray confusion matrix (shape [n_classes, n_classes]) in the
+      order of `classes` (rows: true, cols: predicted).
+    - classes: list of class names corresponding to cm's current ordering.
+    - class_order: optional list specifying the desired display order of
+      classes. If provided, both rows and columns of `cm` will be reordered
+      accordingly. If None, uses the given `classes` order (typically as they
+      appear in the dataset test directory).
     """
     fig = plt.figure()
+
+    # Determine display order and reorder the matrix if needed
+    display_classes = classes
+    if class_order is not None and len(class_order) > 0:
+        # Keep only the intersection, preserving the provided order
+        name_to_idx = {name: i for i, name in enumerate(classes)}
+        idx = [name_to_idx[name] for name in class_order if name in name_to_idx]
+        if len(idx) == 0:
+            # Fallback: if nothing matches, keep original
+            idx = list(range(len(classes)))
+        else:
+            display_classes = [class_order[i] for i in range(len(idx))]
+        cm = cm[np.ix_(idx, idx)]
+
     norm = ''
     if normalize:
-        cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
+        # Normalize by row (true class)
+        row_sums = cm.sum(axis=1, keepdims=True)
+        # Avoid division by zero
+        row_sums[row_sums == 0] = 1
+        cm = cm.astype('float') / row_sums
         norm = '_norm'
 
     plt.imshow(cm, interpolation='nearest', cmap=cmap)
     # plt.title(title)
     plt.colorbar()
-    tick_marks = np.arange(len(classes))
-    plt.xticks(tick_marks, classes, rotation=0, fontsize=12)
-    plt.yticks(tick_marks, classes, fontsize=12)
+    tick_marks = np.arange(len(display_classes))
+    plt.xticks(tick_marks, display_classes, rotation=0, fontsize=12)
+    plt.yticks(tick_marks, display_classes, fontsize=12)
 
     thresh = cm.max() / 2.
     for i, j in itertools.product(range(cm.shape[0]), range(cm.shape[1])):

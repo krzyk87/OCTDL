@@ -144,7 +144,8 @@ def evaluate(cfg, model, test_dataset, estimator):
         classes=class_names,
         normalize=True,
         model_path=model_path,
-        exp_name='_'.join([cfg.train.network, dataset])
+        exp_name='_'.join([cfg.train.network, dataset]),
+        class_order=cfg.data.plot_class_order
     )
     print('========================================')
 

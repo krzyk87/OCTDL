@@ -108,11 +108,14 @@ def _get_dataset_name_from_cfg(cfg) -> str:
     return os.path.basename(os.path.normpath(data_path))
 
 
-def get_sample_images(dataset_name: str):
+def get_sample_images(dataset_name: str, desired_classes=None):
     """
     Get sample images from each class in the examples directory by matching
     class-name substrings in filenames (in capital letters), instead of
     relying on exact filenames.
+
+    If desired_classes is provided (list of class names), search for those
+    specific classes; otherwise fall back to a default list.
 
     Returns a dict mapping class name to example image path.
     """
@@ -122,7 +125,11 @@ def get_sample_images(dataset_name: str):
         print_msg(f"Examples directory not found: {examples_dir}", warning=True)
         return {}
 
-    class_names = ["CNV", "DME", "DRUSEN", "NORMAL", "VMT"]
+    # Default known classes; will be overridden if desired_classes is provided
+    class_names = ["NORMAL", "CNV", "DME", "DRUSEN", "VMA-VMT"]
+    if desired_classes is not None and len(desired_classes) > 0:
+        # Use exactly the desired class order
+        class_names = list(desired_classes)
 
     exts = (".jpg", ".jpeg", ".png", ".bmp", ".tif", ".tiff")
     try:
@@ -249,8 +256,13 @@ def generate_and_save_grad_cam(cfg, model):
     """
     # Determine dataset and sample images
     dataset_name = _get_dataset_name_from_cfg(cfg)
-    samples = get_sample_images(dataset_name)
-    if not samples:
+    # Determine desired class order from config first
+    try:
+        desired_order = list(getattr(cfg.data, 'plot_class_order', []))
+    except Exception:
+        desired_order = []
+    samples = get_sample_images(dataset_name, desired_classes=desired_order if desired_order else None)
+    if not samples and not desired_order:
         print_msg("No sample images found for Grad-CAM. Skipping.", warning=True)
         return
 
@@ -261,11 +273,16 @@ def generate_and_save_grad_cam(cfg, model):
         print_msg(f"Grad-CAM not supported for model '{model_name}': {e}", warning=True)
         return
 
-    preferred_order = ["CNV", "DME", "DRUSEN", "NORMAL", "VMT"]
-    class_names = [c for c in preferred_order if c in samples]
-    class_names += [c for c in samples.keys() if c not in preferred_order]
+    # Establish the class list for plotting. If a desired order is provided,
+    # use it directly to ensure the number of subplots equals the number of classes.
+    if desired_order:
+        class_names = list(desired_order)
+    else:
+        # Default: use the order as they appear from the dataset samples mapping
+        class_names = list(samples.keys())
+
     if len(class_names) == 0:
-        print_msg("No valid sample images for Grad-CAM.", warning=True)
+        print_msg("No valid class names for Grad-CAM.", warning=True)
         return
 
     n_cols = len(class_names)
@@ -278,6 +295,10 @@ def generate_and_save_grad_cam(cfg, model):
     model_device = device
 
     for i, cname in enumerate(class_names):
+        if cname not in samples:
+            axes[i].set_title(f"{cname} (no sample)")
+            axes[i].axis('off')
+            continue
         img_path = samples[cname]
         input_tensor, img_disp = preprocess_image(img_path, cfg)
         input_tensor = input_tensor.to(model_device)
@@ -288,7 +309,7 @@ def generate_and_save_grad_cam(cfg, model):
         axes[i].set_title(f"{cname}")
         axes[i].axis('off')
 
-    plt.tight_layout()
+    plt.tight_layout(rect=[0, 0, 1, 0.95])
 
     # Save to the directory of the checkpoint
     ckpt_path = str(cfg.train.checkpoint)
